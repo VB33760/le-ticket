@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Le Ticket — Liste de courses</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2c2620">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Le Ticket">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Archivo+Black&display=swap');
 
@@ -153,19 +160,6 @@
     <label class="stay-row"><input type="checkbox" id="stay-connected" checked> Rester connecté sur cet appareil</label>
     <button type="submit" class="login-btn">Se connecter</button>
     <div class="auth-error" id="login-error"></div>
-    <div class="switch-mode">Pas encore de compte ? <button type="button" id="go-signup">Créer un compte</button></div>
-  </form>
-
-  <form id="signup-form" class="hidden">
-    <label class="field-label" for="signup-prenom">Prénom</label>
-    <input type="text" id="signup-prenom" placeholder="Camille" required autocomplete="given-name">
-    <label class="field-label" for="signup-email">Adresse mail</label>
-    <input type="email" id="signup-email" placeholder="camille@exemple.fr" required autocomplete="email">
-    <label class="field-label" for="signup-password">Mot de passe</label>
-    <input type="password" id="signup-password" placeholder="6 caractères minimum" required autocomplete="new-password" minlength="6">
-    <button type="submit" class="login-btn">Créer mon compte</button>
-    <div class="auth-error" id="signup-error"></div>
-    <div class="switch-mode">Déjà un compte ? <button type="button" id="go-login">Se connecter</button></div>
   </form>
 </div>
 
@@ -213,7 +207,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
-  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  getAuth, signInWithEmailAndPassword,
   onAuthStateChanged, signOut, setPersistence,
   browserLocalPersistence, browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
@@ -258,15 +252,6 @@ function showApp(prenom){
 }
 
 // --- Authentification ---
-document.getElementById('go-signup').addEventListener('click', () => {
-  document.getElementById('login-form').classList.add('hidden');
-  document.getElementById('signup-form').classList.remove('hidden');
-});
-document.getElementById('go-login').addEventListener('click', () => {
-  document.getElementById('signup-form').classList.add('hidden');
-  document.getElementById('login-form').classList.remove('hidden');
-});
-
 document.getElementById('login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = document.getElementById('login-email').value.trim();
@@ -279,24 +264,6 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
     await signInWithEmailAndPassword(auth, email, password);
   }catch(err){
     errorBox.textContent = "Adresse mail ou mot de passe incorrect.";
-  }
-});
-
-document.getElementById('signup-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const prenom = document.getElementById('signup-prenom').value.trim();
-  const email = document.getElementById('signup-email').value.trim();
-  const password = document.getElementById('signup-password').value;
-  const errorBox = document.getElementById('signup-error');
-  errorBox.textContent = '';
-  try{
-    await setPersistence(auth, browserLocalPersistence);
-    const cred = await createUserWithEmailAndPassword(auth, email, password);
-    await setDoc(doc(db, 'users', cred.user.uid), { prenom, email });
-  }catch(err){
-    if(err.code === 'auth/email-already-in-use') errorBox.textContent = "Cette adresse mail a déjà un compte.";
-    else if(err.code === 'auth/weak-password') errorBox.textContent = "Mot de passe trop court (6 caractères min).";
-    else errorBox.textContent = "Impossible de créer le compte.";
   }
 });
 
@@ -395,6 +362,13 @@ document.getElementById('clear-done').addEventListener('click', () => {
   items = items.filter(i => !i.done);
   render(); saveItems();
 });
+
+// Enregistrement du service worker pour rendre l'app installable
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
