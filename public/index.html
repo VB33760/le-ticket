@@ -287,8 +287,8 @@ onAuthStateChanged(auth, async (user) => {
 
   showApp(prenom);
 
-  // Écoute en temps réel de la liste de cet utilisateur
-  unsubscribeItems = onSnapshot(doc(db, 'lists', user.uid), (snap) => {
+  // Écoute en temps réel de la liste partagée du foyer
+  unsubscribeItems = onSnapshot(doc(db, 'lists', 'foyer'), (snap) => {
     items = snap.exists() ? (snap.data().items || []) : [];
     render();
   });
@@ -297,7 +297,7 @@ onAuthStateChanged(auth, async (user) => {
 // --- Gestion de la liste ---
 async function saveItems(){
   if(!currentUid) return;
-  try{ await setDoc(doc(db, 'lists', currentUid), { items }); }
+  try{ await setDoc(doc(db, 'lists', 'foyer'), { items }); }
   catch(e){ console.error("Erreur de sauvegarde", e); }
 }
 
