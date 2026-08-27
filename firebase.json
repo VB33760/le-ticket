@@ -1,17 +1,12 @@
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Chaque utilisateur ne peut lire/écrire que son propre profil
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // La liste de courses est unique et partagée entre tous les comptes
-    // autorisés (créés par vous dans la console Firebase) — seule une
-    // personne connectée peut la lire ou la modifier.
-    match /lists/foyer {
-      allow read, write: if request.auth != null;
-    }
+{
+  "hosting": {
+    "public": "public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      { "source": "**", "destination": "/index.html" }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
   }
 }
