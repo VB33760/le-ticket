@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Ticket — Liste de courses</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2c2620">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Le Ticket">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Archivo+Black&display=swap');
+
+  :root{
+    --paper: #ede6d3;
+    --paper-dark: #e2d9c0;
+    --ink: #2c2620;
+    --ink-soft: #6b6151;
+    --red: #b3402f;
+    --green: #4f6b45;
+    --line: #c9bd9f;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background: #3a3530;
+    background-image: radial-gradient(ellipse at top, #4a443c 0%, #3a3530 60%);
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink);
+    display:flex;
+    justify-content:center;
+    padding: 32px 12px 80px;
+  }
+
+  .receipt{
+    width: 100%;
+    max-width: 420px;
+    background: var(--paper);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.45), 0 4px 0 rgba(0,0,0,0.1) inset;
+    position:relative;
+    padding: 28px 26px 20px;
+  }
+
+  .receipt::before, .receipt::after{
+    content:"";
+    position:absolute;
+    left:0; right:0;
+    height:12px;
+    background:
+      linear-gradient(135deg, transparent 50%, var(--paper) 50%) 0 0,
+      linear-gradient(-135deg, transparent 50%, var(--paper) 50%) 0 0;
+    background-size: 16px 16px;
+    background-repeat: repeat-x;
+  }
+  .receipt::before{ top:-11px; }
+  .receipt::after{ bottom:-11px; transform: rotate(180deg); }
+
+  header{ text-align:center; padding-bottom:14px; border-bottom: 2px dashed var(--line); margin-bottom: 16px; }
+  .store-name{ font-family: 'Archivo Black', sans-serif; font-size: 22px; letter-spacing: 0.5px; text-transform: uppercase; }
+  .store-sub{ font-size: 11px; color: var(--ink-soft); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .meta-row{ display:flex; justify-content:space-between; font-size: 11px; color: var(--ink-soft); margin-top: 10px; }
+
+  form.add-form{ display:flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .add-row{ display:flex; gap:6px; }
+
+  input[type=text], input[type=number], input[type=email], input[type=password], select{
+    font-family: inherit;
+    background: var(--paper-dark);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 9px 10px;
+    font-size: 14px;
+    outline: none;
+  }
+  input:focus, select:focus{ border-color: var(--ink); }
+
+  #item-name{ flex: 1 1 auto; min-width: 0; }
+  #item-qty{ width: 56px; text-align:center; }
+  select{ width: 100%; }
+
+  button.add-btn, button.login-btn{
+    font-family: 'Archivo Black', sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 10px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  button.add-btn:hover, button.login-btn:hover{ background: var(--red); }
+
+  .category-block{ margin-bottom: 14px; }
+  .category-title{ font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--ink-soft); margin: 14px 0 6px; display:flex; align-items:center; gap:6px; }
+  .category-title::after{ content:""; flex:1; border-bottom: 1px dotted var(--line); }
+
+  ul.items{ list-style:none; margin:0; padding:0; }
+  li.item{ display:flex; align-items:baseline; gap:8px; padding: 6px 0; font-size: 15px; cursor: pointer; position: relative; }
+  li.item .qty{ color: var(--ink-soft); font-size: 12px; min-width: 22px; }
+  li.item .name{ flex:1; transition: color .2s; }
+  li.item.done .name{ color: var(--ink-soft); text-decoration: line-through wavy var(--red); text-decoration-thickness: 1px; }
+  li.item .del{ color: var(--line); font-size: 14px; padding: 2px 4px; cursor:pointer; }
+  li.item .del:hover{ color: var(--red); }
+
+  .checkbox{ width: 14px; height:14px; border: 1.5px solid var(--ink-soft); flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size: 11px; color: var(--green); }
+
+  .totals{ border-top: 2px dashed var(--line); margin-top: 10px; padding-top: 10px; display:flex; justify-content:space-between; font-size: 13px; }
+  .clear-btn{ background:none; border:none; font-family: inherit; font-size: 11px; color: var(--ink-soft); text-decoration: underline; cursor:pointer; letter-spacing:0.5px; }
+  .clear-btn:hover{ color: var(--red); }
+
+  .empty{ text-align:center; color: var(--ink-soft); font-size: 13px; padding: 20px 0; font-style: italic; }
+
+  .barcode{ margin-top: 18px; height: 34px; background: repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 4px, var(--ink) 4px 5px, transparent 5px 9px); opacity: 0.85; }
+  .barcode-label{ text-align:center; font-size: 10px; letter-spacing: 3px; color: var(--ink-soft); margin-top: 4px; }
+
+  @media (max-width: 400px){ .receipt{ padding: 22px 16px 16px; } }
+
+  /* Écran de connexion */
+  #login-screen{ width: 100%; max-width: 340px; background: var(--paper); box-shadow: 0 30px 60px rgba(0,0,0,0.45); padding: 30px 28px 26px; position: relative; border-radius: 10px; }
+  #login-screen::before{ content:""; position:absolute; top:14px; left:14px; right:14px; bottom:14px; border: 1px dashed var(--line); border-radius: 6px; pointer-events:none; }
+  .card-eyebrow{ text-align:center; font-size: 10px; letter-spacing: 3px; color: var(--ink-soft); text-transform:uppercase; margin-bottom: 4px; }
+  .card-title{ font-family: 'Archivo Black', sans-serif; font-size: 20px; text-align:center; margin-bottom: 20px; }
+  .field-label{ font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink-soft); display:block; margin: 12px 0 4px; }
+  #login-form input, #signup-form input{ width:100%; }
+  .stay-row{ display:flex; align-items:center; gap:8px; margin: 16px 0 6px; font-size: 12px; color: var(--ink-soft); }
+  .stay-row input{ width:14px; height:14px; accent-color: var(--ink); }
+  button.login-btn{ width:100%; margin-top: 14px; }
+
+  .switch-mode{ text-align:center; margin-top:16px; font-size:11px; color:var(--ink-soft); }
+  .switch-mode button{ background:none; border:none; color:var(--ink); text-decoration:underline; cursor:pointer; font-family:inherit; font-size:11px; padding:0; }
+
+  .auth-error{ color: var(--red); font-size: 11px; margin-top: 10px; min-height: 14px; }
+
+  .greet-row{ display:flex; justify-content:space-between; align-items:baseline; font-size: 11px; color: var(--ink-soft); margin-top: 6px; }
+  .logout-link{ color: var(--ink-soft); text-decoration: underline; cursor:pointer; background:none; border:none; font-family: inherit; font-size: 11px; }
+  .logout-link:hover{ color: var(--red); }
+
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="card-eyebrow">Carte de membre</div>
+  <div class="card-title" id="auth-title">Le Ticket</div>
+
+  <form id="login-form">
+    <label class="field-label" for="login-email">Adresse mail</label>
+    <input type="email" id="login-email" placeholder="camille@exemple.fr" required autocomplete="email">
+    <label class="field-label" for="login-password">Mot de passe</label>
+    <input type="password" id="login-password" placeholder="••••••••" required autocomplete="current-password">
+    <label class="stay-row"><input type="checkbox" id="stay-connected" checked> Rester connecté sur cet appareil</label>
+    <button type="submit" class="login-btn">Se connecter</button>
+    <div class="auth-error" id="login-error"></div>
+  </form>
+</div>
+
+<div class="receipt hidden" id="app-screen">
+  <header>
+    <div class="store-name">Le Ticket</div>
+    <div class="store-sub">Liste de courses partagée</div>
+    <div class="meta-row" style="justify-content:center;"><span id="item-count">0 article</span></div>
+    <div class="greet-row">
+      <span id="greeting">Bonjour</span>
+      <button class="logout-link" id="logout-btn">déconnexion</button>
+    </div>
+  </header>
+
+  <form class="add-form" id="add-form">
+    <div class="add-row">
+      <input type="text" id="item-name" placeholder="Ajouter un article…" autocomplete="off" required>
+      <input type="number" id="item-qty" placeholder="1" min="1" value="1">
+    </div>
+    <div class="add-row">
+      <select id="item-category">
+        <option value="Fruits & Légumes">🥦 Fruits & Légumes</option>
+        <option value="Crèmerie">🥛 Crèmerie</option>
+        <option value="Boulangerie">🍞 Boulangerie</option>
+        <option value="Épicerie">🥫 Épicerie</option>
+        <option value="Boissons">🍷 Boissons</option>
+        <option value="Hygiène & Maison">🧴 Hygiène & Maison</option>
+        <option value="Autre">📦 Autre</option>
+      </select>
+      <button type="submit" class="add-btn">Ajouter</button>
+    </div>
+  </form>
+
+  <div id="list-container"></div>
+
+  <div class="totals">
+    <span id="remaining-label">0 restant</span>
+    <button class="clear-btn" id="clear-done">effacer les articles cochés</button>
+  </div>
+
+  <div class="barcode"></div>
+  <div class="barcode-label">MERCI DE VOTRE VISITE</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import {
+  getAuth, signInWithEmailAndPassword,
+  onAuthStateChanged, signOut, setPersistence,
+  browserLocalPersistence, browserSessionPersistence
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+// ⚠️ Remplacez ces valeurs par celles de VOTRE projet Firebase
+// (Console Firebase → Paramètres du projet → Vos applications → Config SDK)
+const firebaseConfig = {
+  apiKey: "AIzaSyBbH5jii_tbOneOSvLInbiT-7H2hYWMsFE",
+  authDomain: "liste-course-89bd5.firebaseapp.com",
+  projectId: "liste-course-89bd5",
+  storageBucket: "liste-course-89bd5.firebasestorage.app",
+  messagingSenderId: "172430437863",
+  appId: "1:172430437863:web:eed8dbad37e5823c486142",
+  measurementId: "G-8GKNTCS3B5"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const CATEGORY_ORDER = ["Fruits & Légumes","Crèmerie","Boulangerie","Épicerie","Boissons","Hygiène & Maison","Autre"];
+const CATEGORY_EMOJI = { "Fruits & Légumes":"🥦","Crèmerie":"🥛","Boulangerie":"🍞","Épicerie":"🥫","Boissons":"🍷","Hygiène & Maison":"🧴","Autre":"📦" };
+
+let items = [];
+let unsubscribeItems = null;
+let currentUid = null;
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function escapeHtml(str){ const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
+
+function showLogin(){
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app-screen').classList.add('hidden');
+}
+function showApp(prenom){
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('greeting').textContent = `Bonjour, ${prenom || ''}`;
+}
+
+// --- Authentification ---
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const stay = document.getElementById('stay-connected').checked;
+  const errorBox = document.getElementById('login-error');
+  errorBox.textContent = '';
+  try{
+    await setPersistence(auth, stay ? browserLocalPersistence : browserSessionPersistence);
+    await signInWithEmailAndPassword(auth, email, password);
+  }catch(err){
+    errorBox.textContent = "Adresse mail ou mot de passe incorrect.";
+  }
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => signOut(auth));
+
+onAuthStateChanged(auth, async (user) => {
+  if(unsubscribeItems){ unsubscribeItems(); unsubscribeItems = null; }
+
+  if(!user){
+    currentUid = null;
+    showLogin();
+    return;
+  }
+
+  currentUid = user.uid;
+  let prenom = user.email;
+  try{
+    const profileSnap = await getDoc(doc(db, 'users', user.uid));
+    if(profileSnap.exists()) prenom = profileSnap.data().prenom || prenom;
+  }catch(e){ /* profil non trouvé, on garde l'email */ }
+
+  showApp(prenom);
+
+  // Écoute en temps réel de la liste partagée du foyer
+  unsubscribeItems = onSnapshot(doc(db, 'lists', 'foyer'), (snap) => {
+    items = snap.exists() ? (snap.data().items || []) : [];
+    render();
+  });
+});
+
+// --- Gestion de la liste ---
+async function saveItems(){
+  if(!currentUid) return;
+  try{ await setDoc(doc(db, 'lists', 'foyer'), { items }); }
+  catch(e){ console.error("Erreur de sauvegarde", e); }
+}
+
+function render(){
+  const container = document.getElementById('list-container');
+  container.innerHTML = '';
+
+  if(items.length === 0){
+    container.innerHTML = '<div class="empty">Le ticket est vide. Ajoutez votre premier article.</div>';
+  } else {
+    CATEGORY_ORDER.forEach(cat => {
+      const catItems = items.filter(i => i.category === cat);
+      if(catItems.length === 0) return;
+
+      const block = document.createElement('div');
+      block.className = 'category-block';
+      const title = document.createElement('div');
+      title.className = 'category-title';
+      title.textContent = `${CATEGORY_EMOJI[cat]} ${cat}`;
+      block.appendChild(title);
+
+      const ul = document.createElement('ul');
+      ul.className = 'items';
+      catItems.sort((a,b) => (a.done === b.done) ? 0 : (a.done ? 1 : -1)).forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'item' + (item.done ? ' done' : '');
+        li.innerHTML = `
+          <span class="checkbox">${item.done ? '✓' : ''}</span>
+          <span class="qty">×${item.quantity}</span>
+          <span class="name">${escapeHtml(item.name)}</span>
+          <span class="del" data-id="${item.id}">✕</span>`;
+        li.addEventListener('click', (e) => { if(!e.target.classList.contains('del')) toggleItem(item.id); });
+        li.querySelector('.del').addEventListener('click', (e) => { e.stopPropagation(); deleteItem(item.id); });
+        ul.appendChild(li);
+      });
+      block.appendChild(ul);
+      container.appendChild(block);
+    });
+  }
+
+  const remaining = items.filter(i => !i.done).length;
+  document.getElementById('item-count').textContent = `${items.length} article${items.length>1?'s':''}`;
+  document.getElementById('remaining-label').textContent = `${remaining} restant${remaining>1?'s':''}`;
+}
+
+function toggleItem(id){ const it = items.find(i => i.id === id); if(it){ it.done = !it.done; render(); saveItems(); } }
+function deleteItem(id){ items = items.filter(i => i.id !== id); render(); saveItems(); }
+
+document.getElementById('add-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const nameInput = document.getElementById('item-name');
+  const qtyInput = document.getElementById('item-qty');
+  const catSelect = document.getElementById('item-category');
+  const name = nameInput.value.trim();
+  if(!name) return;
+  items.unshift({ id: uid(), name, quantity: parseInt(qtyInput.value) || 1, category: catSelect.value, done: false });
+  nameInput.value = ''; qtyInput.value = '1'; nameInput.focus();
+  render(); saveItems();
+});
+
+document.getElementById('clear-done').addEventListener('click', () => {
+  items = items.filter(i => !i.done);
+  render(); saveItems();
+});
+
+// Enregistrement du service worker pour rendre l'app installable
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
